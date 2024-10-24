@@ -263,7 +263,12 @@ class MetaTanhActor(nn.Module):
         Returns:
             tuple: 包含 (tanh(mean), action, log_prob) 和 network_state（None）的元组。
         """
-        means, logstd = self.net(inputs).chunk(2, dim=-1)
+        if training:
+            self.net.train()  # 否则，如果是训练模式，设置为 train 模式
+            means, logstd = self.net(inputs).chunk(2, dim=-1)
+        else:
+            self.net.eval()  # 如果是测试模式，设置为 eval 模式
+            means, logstd = self.net(inputs,bn_training=False).chunk(2, dim=-1)
         means = torch.clamp(means, self.mean_min, self.mean_max)
         logstd = torch.clamp(logstd, self.logstd_min, self.logstd_max)
         std = torch.exp(logstd) * self.initial_std_scaler
@@ -273,6 +278,7 @@ class MetaTanhActor(nn.Module):
         action = torch.tanh(pretanh_action)
         log_prob = self.log_prob(pretanh_action_dist, pretanh_action)
         deterministic_action = torch.tanh(means)
+        self.net.train()
         return (deterministic_action, action, log_prob), None  # network_state 为 None
 
     def log_prob(self, pretanh_action_dist, pretanh_action):
@@ -315,12 +321,19 @@ class MetaTanhActor(nn.Module):
             mean, logstd = self.net(states).chunk(2, dim=-1)
         else:
             mean, logstd = self.net(states,vars).chunk(2, dim=-1)
+        if not torch.isfinite(mean).all():
+            print("States:", states)
+            raise ValueError("Means contain NaN or Inf!")
+
+        # 检查 logstd 是否有限，如果不是，则打印 states 并抛出异常
+        if not torch.isfinite(logstd).all():
+            print("States:", states)
+            raise ValueError("Logstd contain NaN or Inf!")
         mean = torch.clamp(mean, self.mean_min, self.mean_max)
         logstd = torch.clamp(logstd, self.logstd_min, self.logstd_max)
-
         # 计算标准差
         std = torch.exp(logstd) * self.initial_std_scaler
-
+        assert torch.isfinite(std).all(), "std contain NaN or Inf!"
         # 创建独立正态分布
         normal_dist = Normal(mean, std)
         pretanh_action_dist = Independent(normal_dist, 1)
@@ -582,3 +595,109 @@ def add_absorbing_states(expert_states, expert_actions, expert_next_states,
     expert_dones = np.stack(expert_dones)
 
     return expert_states.astype(dtype), expert_actions.astype(dtype), expert_next_states.astype(dtype), expert_dones.astype(dtype)
+
+    
+class RolloutBuffer:
+    """
+    Rollout buffer that often used in training RL agents
+
+    Parameters
+    ----------
+    buffer_size: int
+        size of the buffer
+    state_shape: np.array
+        shape of the state space
+    action_shape: np.array
+        shape of the action space
+    device: torch.device
+        cpu or cuda
+    mix: int
+        the buffer will be mixed using these time of data
+    """
+    def __init__(
+            self,
+            buffer_size: int,
+            state_shape: int,
+            action_shape: int,
+            mix: int = 1
+    ):
+        self._n = 0
+        self._p = 0
+        self.mix = mix
+        self.buffer_size = buffer_size
+        self.total_size = mix * buffer_size
+
+        self.buffer = {
+            'states': np.empty((self.total_size, state_shape), dtype=np.float32),
+            'actions': np.empty((self.total_size, action_shape), dtype=np.float32),
+            'rewards': np.empty((self.total_size, 1), dtype=np.float32),
+            'dones': np.empty((self.total_size, 1), dtype=np.float32),
+            'next_states': np.empty((self.total_size, state_shape), dtype=np.float32)
+        }
+
+    def append(
+            self,
+            state: np.array,
+            action: np.array,
+            reward: float,
+            done: bool,
+            next_state: np.array
+    ):
+        """
+        Save a transition in the buffer
+
+        Parameters
+        ----------
+        state: np.array
+            current state
+        action: np.array
+            action taken in the state
+        reward: float
+            reward of the s-a pair
+        done: bool
+            whether the state is the end of the episode
+        log_pi: float
+            log(\pi(a|s))
+        next_state: np.array
+            next states that the s-a pair transferred to
+        """
+        self.buffer['states'][self._p] = state
+        self.buffer['actions'][self._p] = action
+        self.buffer['rewards'][self._p] = reward
+        self.buffer['dones'][self._p] = done
+        self.buffer['next_states'][self._p] = next_state
+
+        self._p = (self._p + 1) % self.total_size
+        self._n = min(self._n + 1, self.total_size)
+
+    def sample(
+            self,
+            batch_size: int,
+            indices: np.array = None,
+            to_numpy: bool = False
+    ):
+        """
+        Sample data from the buffer
+
+        Parameters
+        ----------
+        batch_size: int
+            batch size
+        indices: np.array, optional
+            specific indices to sample from the buffer
+        to_numpy: bool, optional
+            whether to return the sampled data in numpy format
+
+        Returns
+        -------
+        states: np.array
+        actions: np.array
+        rewards: np.array
+        dones: np.array
+        log_pis: np.array
+        next_states: np.array
+        """
+        if indices is None:
+            indices = np.random.randint(low=0, high=self._n, size=batch_size)
+
+        return self.buffer['states'][indices],self.buffer['actions'][indices],self.buffer['next_states'][indices],self.buffer['dones'][indices],
