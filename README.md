@@ -31,7 +31,7 @@ This repository is the official implementation of
 ### How to Run
 1. DemoDICE
     ```
-    python lfd_mujoco.py --env_id=Hopper-v2 --imperfect_dataset_names=expert --imperfect_dataset_names=random --imperfect_num_trajs=100 --imperfect_num_trajs=500 --algorithm=metairl
+    python lfd_mujoco.py --env_id=HalfCheetah-v2 --imperfect_dataset_names=expert --imperfect_dataset_names=random --imperfect_num_trajs=100 --imperfect_num_trajs=500 --algorithm=metairl
     ```
 CUDA_VISIBLE_DEVICES=0 python lfd_mujoco.py --env_id=Walker2d-v2 --imperfect_dataset_names=full_replay --imperfect_num_trajs=5000 --algorithm=metaiswbc
 2. LobsDICE

@@ -6,20 +6,19 @@ PYTHON_SCRIPT="lfd_mujoco.py"
 # ALGOS=("mybc" "demodice" "iswbc")
 ALGOS=("metairl") 
 # 环境列表
-ENVS=("Ant-v2" "Hopper-v2" "HalfCheetah-v2" "Walker2d-v2")
+ENVS=("HalfCheetah-v2")
 # 随机种子列表
 # SEEDS=(2022 2023 2024 2025 2026)
-SEEDS=(2025)
+SEEDS=(2023)
 # GPU 设备列表
-DEVICES=(0 1)
+DEVICES=(1 1)
 
 # 不完缺数据集和迷你传输数量
 # IMPERFECT_DATASET_NAMES=("expert" "random")
 # IMPERFECT_NUM_TRAJS=(400 1600)
 
-IMPERFECT_DATASET_NAMES=("full_replay")
-IMPERFECT_NUM_TRAJS=(4000)
-
+IMPERFECT_DATASET_NAMES=("expert" "random")
+IMPERFECT_NUM_TRAJS=(400 1600)
 
 # 初始化 GPU 计数器
 gpu_index=0
