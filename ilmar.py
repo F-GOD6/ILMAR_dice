@@ -118,12 +118,14 @@ class ILMAR(nn.Module):
         # 清零梯度
         self.cost_optimizer.zero_grad()
         cost_final_loss = self.alpha * meta_loss + self.beta * cost_loss
-        cost_final_loss.backward(retain_graph=True)
+        clip_grad_norm_(self.cost.parameters(), max_norm=10.0)
+        meta_loss.backward(retain_graph=True)
         self.cost_optimizer.step()
         pi_loss = - (indices * weight.detach() * log_probs).mean()
         self.actor_optimizer.zero_grad()
         # 计算梯度并更新参数
         pi_loss.backward()
+        clip_grad_norm_(self.actor.parameters(), max_norm=10.0)
         self.actor_optimizer.step()
 
         info_dict = {
@@ -154,7 +156,7 @@ class ILMAR(nn.Module):
 
     def step(self, observation, deterministic: bool = True):
         observation = torch.tensor([observation], dtype=torch.float32).to(self.device)
-        all_actions, _ = self.actor(observation)
+        all_actions, _ = self.actor(observation,training=False)
         if deterministic:
             action = all_actions[0]
         else:

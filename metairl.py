@@ -73,7 +73,7 @@ class MetaIRL(nn.Module):
         union_cost_val = self.cost(union_inputs)
 
         union_cost = torch.sigmoid(union_cost_val)
-
+        expert_cost = torch.sigmoid(expert_cost_val)
         # nu learning
         expert_nu = self.critic(expert_states)
         expert_next_nu = self.critic(expert_next_states)
@@ -95,32 +95,10 @@ class MetaIRL(nn.Module):
         fast_weights = list(map(lambda p: p[1] - self.actor_lr * p[0], zip(grad, fast_weights)))
         meta_log_probs = self.actor.get_log_prob(expert_states, expert_actions, fast_weights)
         meta_loss =  - meta_log_probs.mean()
-        # 梯度惩罚 for nu
-        if self.grad_reg_coeffs[1] is not None:
-            unif_rand2 = torch.rand(batch_size, 1).to(expert_states.device)
-            nu_inter = unif_rand2 * expert_states + (1 - unif_rand2) * union_states
-            nu_next_inter = unif_rand2 * expert_next_states + (1 - unif_rand2) * union_next_states
-
-            nu_inter = torch.cat([union_states, nu_inter, nu_next_inter], dim=0)
-            nu_inter.requires_grad_(True)
-
-            nu_output = self.critic(nu_inter)
-
-            nu_grad = torch.autograd.grad(
-                outputs=nu_output,
-                inputs=nu_inter,
-                grad_outputs=torch.ones_like(nu_output),
-                create_graph=True,
-                retain_graph=True,
-                only_inputs=True
-            )[0] + EPS
-
-            nu_grad_penalty = (nu_grad.norm(2, dim=-1) ** 2).mean()
-            nu_loss += self.grad_reg_coeffs[1] * nu_grad_penalty
 
         # 清零梯度
         self.cost_optimizer.zero_grad()
-        cost_final_loss = self.alpha * meta_loss + self.beta * cost_loss
+        cost_final_loss =  meta_loss 
         cost_final_loss.backward(retain_graph=True)
         self.cost_optimizer.step()
         pi_loss = - (weight.detach() * log_probs).mean()
@@ -134,15 +112,13 @@ class MetaIRL(nn.Module):
         self.actor_optimizer.step()
 
         info_dict = {
-            'cost_loss': cost_loss.item(),
             "meta_loss": meta_loss.item(), 
             "cost_final_loss": cost_final_loss.item(),
             'nu_loss': nu_loss.item(),
             'actor_loss': pi_loss.item(),
             'expert_nu': expert_nu.mean().item(),
             'union_nu': union_nu.mean().item(),
-            'init_nu': init_nu.mean().item(),
-            'union_adv': union_adv_nu.mean().item(),
+            'union_adv': union_target_qs.mean().item(),
         }
 
         return info_dict

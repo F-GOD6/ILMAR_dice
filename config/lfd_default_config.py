@@ -50,4 +50,5 @@ def get_parser():
     parser.add_argument('--beta', default=1.0, type=float)
     parser.add_argument('--tau', default=0.0, type=float)
     parser.add_argument('--plot_dir', default='plots', type=str)
+    parser.add_argument('--online', default= True, type=bool)
     return parser
