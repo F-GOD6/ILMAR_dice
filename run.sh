@@ -4,7 +4,7 @@
 PYTHON_SCRIPT="lfd_mujoco.py"
 # 算法列表
 # ALGOS=("mybc" "demodice" "iswbc")
-ALGOS=("ilmar" "metademodice" "metaiswbc") 
+ALGOS=("ilmar") 
 # 环境列表
 ENVS=("Ant-v2" "Hopper-v2" "HalfCheetah-v2" "Walker2d-v2")
 # 随机种子列表

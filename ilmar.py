@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import os
 import utils
-
+from torch.nn.utils import clip_grad_norm_
 
 
 
@@ -111,6 +111,7 @@ class ILMAR(nn.Module):
         pi_loss = - (indices * weight * log_probs).mean() #core of meta
         fast_weights = self.actor.net.parameters()
         grad = torch.autograd.grad(pi_loss, fast_weights, create_graph=True,retain_graph=True)
+        clip_grad_norm_(grad, max_norm=10.0)
         fast_weights = list(map(lambda p: p[1] - self.actor_lr * p[0], zip(grad, fast_weights)))
         meta_log_probs = self.actor.get_log_prob(expert_states, expert_actions, fast_weights)
         meta_loss =  - meta_log_probs.mean()
