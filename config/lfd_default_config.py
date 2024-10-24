@@ -30,7 +30,7 @@ def get_parser():
     parser.add_argument('--imperfect_dataset_default_info', default=(["expert-v2", "random-v2"], [100, 1000]))
     parser.add_argument('--resume', default=True, type=bool)
     # optional
-    parser.add_argument('--total_iterations', default=int(2e6), type=int)
+    parser.add_argument('--total_iterations', default=int(1e6), type=int)
     parser.add_argument('--save', default=False, type=bool)
     parser.add_argument('--save_interval', default=int(1e5), type=int)
     parser.add_argument('--log_interval', default=int(1e4), type=int)
