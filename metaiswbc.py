@@ -53,8 +53,8 @@ class MetaISWBC(nn.Module):
         self.alpha = config['walpha']
         self.beta = config['beta']
         self.tau = config['tau']
-    def update(self, init_states, expert_states, expert_actions, expert_next_states,
-               union_states, union_actions, union_next_states):
+    def update(self, init_states, expert_states, expert_actions, expert_next_states, expert_dones,
+               union_states, union_actions, union_next_states, union_dones):
         # 将输入转换为 PyTorch 张量
         init_states = torch.tensor(init_states, dtype=torch.float32).to(self.device)
         expert_states = torch.tensor(expert_states, dtype=torch.float32).to(self.device)

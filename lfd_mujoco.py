@@ -14,6 +14,7 @@ import utils
 import time
 import pickle
 import wandb
+import metairl
 from rl_plotter.logger import Logger
 def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
     """Evaluates the policy.
@@ -171,6 +172,12 @@ def run(config):
             action_dim,
             is_discrete_action,
             config=config)
+    elif algorithm == 'metairl':
+        imitator = metairl.MetaIRL(
+            observation_dim,
+            action_dim,
+            is_discrete_action,
+            config=config)
     else:
         raise ValueError(f'{algorithm} is not supported algorithm name')
 
@@ -212,9 +219,11 @@ def run(config):
                     expert_states[expert_indices],
                     expert_actions[expert_indices],
                     expert_next_states[expert_indices],
+                    expert_dones[expert_indices],
                     union_states[union_indices],
                     union_actions[union_indices],
                     union_next_states[union_indices],
+                    union_dones[union_indices]
                 )
             else:
                 raise ValueError(f'Undefined algorithm {algorithm}')
