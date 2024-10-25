@@ -195,12 +195,6 @@ def run(config):
             action_dim,
             is_discrete_action,
             config=config)
-    elif algorithm == 'metairl':
-        imitator = metairl.MetaIRL(
-            observation_dim,
-            action_dim,
-            is_discrete_action,
-            config=config)
     else:
         raise ValueError(f'{algorithm} is not supported algorithm name')
 
