@@ -4,9 +4,9 @@
 PYTHON_SCRIPT="lfd_mujoco.py"
 # 算法列表
 # ALGOS=("mybc" "demodice" "iswbc")
-ALGOS=("metairl") 
+ALGOS=("ilmar") 
 # 环境列表
-ENVS=("HalfCheetah-v2")
+ENVS=("Ant-v2" "Hopper-v2" "HalfCheetah-v2" "Walker2d-v2")
 # 随机种子列表
 # SEEDS=(2022 2023 2024 2025 2026)
 SEEDS=(2023)
@@ -37,7 +37,7 @@ for algo in "${ALGOS[@]}"; do
                 --env_id "$env" \
                 --seed "$seed" \
                 --walpha 1.0 \
-                --beta 0.0 \
+                --beta 1.0 \
                 $(for ((i=0; i<${#IMPERFECT_DATASET_NAMES[@]}; i++)); do echo --imperfect_dataset_names "${IMPERFECT_DATASET_NAMES[i]}" --imperfect_num_trajs "${IMPERFECT_NUM_TRAJS[i]}"; done) &
             
             # 更新 GPU 计数器 (循环使用 0-3)
