@@ -163,8 +163,8 @@ def run(config):
     # Create imitator
     is_discrete_action = env.action_space.dtype == int
     action_dim = env.action_space.n if is_discrete_action else env.action_space.shape[0]
-    if config['online']:
-        Buffer = utils.RolloutBuffer(buffer_size=1000000,state_shape=observation_dim, action_shape=action_dim)
+    # if config['online']:
+    #     Buffer = utils.RolloutBuffer(buffer_size=1000000,state_shape=observation_dim, action_shape=action_dim)
     if algorithm == 'demodice':
         imitator = demodice.DemoDICE(
             observation_dim,
@@ -236,39 +236,18 @@ def run(config):
                 union_init_indices = np.random.randint(0, len(union_init_states), size=config['batch_size'])
                 expert_indices = np.random.randint(0, len(expert_states), size=config['batch_size'])
                 union_indices = np.random.randint(0, len(union_states), size=config['batch_size'])
-                if config['online']:
-                    if training_info['iteration'] > 0.01 * config['total_iterations']:
-                        collect_d4rl(eval_env, imitator, Buffer, env_id)
-                        buffer_states,buffer_actions,buffer_next_states,buffer_dones = Buffer.sample(config['batch_size'])
-                        info_dict = imitator.update(union_init_states[union_init_indices],
-                                                    expert_states[expert_indices],
-                                                    expert_actions[expert_indices],
-                                                    expert_next_states[expert_indices],
-                                                    expert_dones[expert_indices],buffer_states,buffer_actions,buffer_next_states,buffer_dones)
-                    else:
-                        info_dict = imitator.update(
-                        union_init_states[union_init_indices],
-                        expert_states[expert_indices],
-                        expert_actions[expert_indices],
-                        expert_next_states[expert_indices],
-                        expert_dones[expert_indices],
-                        union_states[union_indices],
-                        union_actions[union_indices],
-                        union_next_states[union_indices],
-                        union_dones[union_indices]
-                    )
-                else:
-                    info_dict = imitator.update(
-                        union_init_states[union_init_indices],
-                        expert_states[expert_indices],
-                        expert_actions[expert_indices],
-                        expert_next_states[expert_indices],
-                        expert_dones[expert_indices],
-                        union_states[union_indices],
-                        union_actions[union_indices],
-                        union_next_states[union_indices],
-                        union_dones[union_indices]
-                    )
+                
+                info_dict = imitator.update(
+                    union_init_states[union_init_indices],
+                    expert_states[expert_indices],
+                    expert_actions[expert_indices],
+                    expert_next_states[expert_indices],
+                    expert_dones[expert_indices],
+                    union_states[union_indices],
+                    union_actions[union_indices],
+                    union_next_states[union_indices],
+                    union_dones[union_indices]
+                )
             else:
                 raise ValueError(f'Undefined algorithm {algorithm}')
 
