@@ -241,8 +241,10 @@ class MetaTanhActor(nn.Module):
         self.action_dim = action_dim
         model_config= [
         ('linear', [hidden_size, state_dim]),
+        ('bn', [hidden_size]),
         (activation_fn, [True]),
         ('linear', [hidden_size, hidden_size]),
+        ('bn', [hidden_size]),
         (activation_fn, [True]),
         ('linear', [2*action_dim, hidden_size]),
     ]

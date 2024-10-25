@@ -14,6 +14,7 @@ import utils
 import time
 import pickle
 import wandb
+import metairl
 from rl_plotter.logger import Logger
 import metairl
 def evaluate_d4rl(env, actor, train_env_id, num_episodes=10):
@@ -184,6 +185,12 @@ def run(config):
             config=config)
     elif algorithm == 'ilmar':
         imitator = ilmar.ILMAR(
+            observation_dim,
+            action_dim,
+            is_discrete_action,
+            config=config)
+    elif algorithm == 'metairl':
+        imitator = metairl.MetaIRL(
             observation_dim,
             action_dim,
             is_discrete_action,
